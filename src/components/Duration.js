@@ -7,12 +7,6 @@ import {
 const width = Dimensions.get('window').width;
 
 export default class Duration extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-
-    }
-  }
   render() {
 
     var pointerPos = (this.props.duration/this.props.total)*(width-20);

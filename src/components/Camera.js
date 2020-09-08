@@ -7,6 +7,7 @@ import Trimmer from './Trimmer';
 import {
   View,
   Dimensions,
+  Animated,
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
@@ -25,8 +26,55 @@ export default class Camera extends React.Component {
       images: [],
       timer: 0,
       paused: false,
+      recordButtonWidth: new Animated.Value(3),
+      borderRadius: new Animated.Value(3),
+      doubleTap: false,
     };
   }
+
+  _animatedGo() {
+    Animated.timing(this.state.recordButtonWidth, {toValue: 7,
+                                                   duration: 1000,
+                                                   useNativeDriver: false}).start();
+    Animated.timing(this.state.borderRadius, {toValue: 10,
+                                                  duration: 1000,
+                                                  useNativeDriver: false}).start();
+    setTimeout(() => {
+      if(this.state.recording){
+        this._animatedBack();
+      } else {
+        this.setState({recordButtonWidth: 3, borderRadius: 3});
+      }
+    }, 1050);
+  }
+
+  _animatedBack() {
+    Animated.timing(this.state.recordButtonWidth, {toValue: 3,
+                                                   duration: 1000, useNativeDriver: false}).start();
+    Animated.timing(this.state.borderRadius, {toValue: 3,
+                                                    duration: 1000,
+                                                    useNativeDriver: false}).start();
+    setTimeout(() => {
+      if(this.state.recording){
+        this._animatedGo();
+      } else {
+        this.setState({recordButtonWidth: 3, borderRadius: 3});
+      }
+    }, 1050);
+  }
+
+  _doubleTap() {
+    if(this.state.doubleTap) {
+      this._record();
+      this.setState({doubleTap: false});
+    } else {
+      this.setState({doubleTap: true});
+      setTimeout(() => {
+        this.setState({doubleTap: false});
+        }, 400);
+      }
+  }
+
   _takeVideo = async (video) => {
     if (this.camera) {
       try {
@@ -38,6 +86,7 @@ export default class Camera extends React.Component {
         const promise = this.camera.recordAsync(options);
         if (promise) {
           this.setState({recording: true});
+          this._animatedGo();
           this.interval = setInterval(
             () => {this.setState({timer: this.state.timer + 100});
                    console.log(this.state.timer);
@@ -75,7 +124,6 @@ export default class Camera extends React.Component {
       url: this.state.video,
       timeStamp: actual,
     }).then((response) => {
-      console.log("foi")
       this.setState({
         images: this.state.images.concat(response.path),
       });
@@ -127,25 +175,31 @@ export default class Camera extends React.Component {
         <Duration duration={this.state.timer}
                   total={30000}
                   style={{position: 'absolute', top: 0}}/>
-        <View style={{position: 'absolute',
-                      borderWidth: 3,
-                      width: 90,
-                      left: (width/2 - 45),
-                      bottom: 70,
+        <View style={{width: '100%',
+                      position: 'absolute',
+                      bottom: 50,
                       justifyContent: 'center',
                       alignItems: 'center',
-                      height: 90,
-                      borderRadius: 100,
-                      borderColor: "white"}}>
-          <TouchableOpacity
-            onPress={() => this._record()}
-            style={{
-              backgroundColor: this.state.recording ? 'white' : 'red',
-              borderRadius: this.state.recording ? 0 : 100,
-              width: this.state.recording ? 50 : 70,
-              height: this.state.recording ? 50 : 70,
-            }}
-          />
+                      backgroundColor: 'pink', height: 100}}>
+          <Animated.View style={{
+                        borderWidth: this.state.recordButtonWidth,
+                        width: 90,
+                        height: 90,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        borderRadius: 100,
+                        borderColor: "red"}}>
+            <Animated.View
+              style={{
+                backgroundColor: 'red',
+                borderRadius: this.state.recording ? this.state.borderRadius : 100,
+                width: this.state.recording ? 40 : 70,
+                height: this.state.recording ? 40 : 70,
+              }}>
+              <TouchableOpacity
+                onPress={() => this._doubleTap()} style={{flex: 1}}/>
+            </Animated.View>
+          </Animated.View>
         </View>
       </View>
     );
